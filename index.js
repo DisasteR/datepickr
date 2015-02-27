@@ -56,6 +56,33 @@ var Datepickr = (function() {
         var d = new Date(this.year, this.month, e.target.textContent).getTime();
         var c = e.target.classList;
         if (this.config.halfDay) {
+
+
+            if (c.contains('morning') && c.contains('active')) {
+                c.remove('morning');
+                c.add('noon');
+                this.config.activeDays = this.config.activeDays.map(function(date) {
+                    if (date[0] === d) date[1] = '0.1';
+                    return date;
+                });
+            } else if (c.contains('noon') && c.contains('active')) {
+                c.remove('noon');
+                this.config.activeDays = this.config.activeDays.filter(function(date) {
+                    if (date[0] === d) date[1] = '1.1';
+                    return date;
+                });
+            } else if (c.contains('active')) {
+                c.remove('active');
+                this.config.activeDays = this.config.activeDays.filter(function(date) {
+                    return date[0] !== d;
+                });
+            } else {
+                c.add('active', 'morning');
+                this.config.activeDays.push([d, '1.0']);
+            }
+
+
+/*
           if (c.contains('halfday')) {
             c.remove('halfday');
             this.config.activeDays = this.config.activeDays.map(function(date) {
@@ -71,9 +98,12 @@ var Datepickr = (function() {
             c.add('active', 'halfday');
             this.config.activeDays.push([d, 0.5]);
           }
+*/
+
+
         } else {
           if (c.contains('active')) {
-            c.remove('active', 'halfday');
+            c.remove('active', 'morning', 'noon');
             this.config.activeDays = this.config.activeDays.filter(function(date) {
               return date[0] !== d;
             });
@@ -226,12 +256,27 @@ var Datepickr = (function() {
       }
 
       if (isToday.call(this, year, month, i)) {
+          klass = 'today';
+
+          if (isWeekend.call(this, year, month, i)) {
+              if (this.config.greyWeekends) {
+                  klass += ' greyed';
+              }
+              if (this.config.omitWeekends) {
+                  klass += ' quiet';
+                  omit = true;
+              }
+          }
+
+/*
         if (this.config.omitWeekends && isWeekend.call(this, year, month, i)) {
           klass = 'today quiet';
           omit = true;
         } else {
           klass = 'today';
         }
+*/
+
       } else if (this.config.omitPast && isPast(year, month, i) ||
         this.config.omitFuture && isFuture(year, month, i) ||
         this.config.omitWeekends && isWeekend.call(this, year, month, i) ||
@@ -239,8 +284,18 @@ var Datepickr = (function() {
 
         klass = 'fill-light quiet';
         omit = true;
+
+              if (this.config.greyWeekends && isWeekend.call(this, year, month, i)) {
+                  klass += ' greyed';
+              }
+
+
       } else {
         klass = 'fill-light';
+
+              if (this.config.greyWeekends && isWeekend.call(this, year, month, i)) {
+                  klass += ' greyed';
+              }
       }
 
       var self = this;
@@ -248,7 +303,8 @@ var Datepickr = (function() {
       if (this.config.activeDays.length) {
         this.config.activeDays.forEach(function(d) {
           if (roundDate.call(self, new Date(d[0])).getTime() === new Date(year, month, i).getTime()) {
-            klass += (d[1] === 1) ? ' active' : ' halfday active';
+            klass += (d[1] === 1 || (d[1] == '1.1')) ? ' active' : ((d[1] == '1.0') ? ' active morning' : ' active noon' )
+            klass = klass;
           }
         });
       }
@@ -319,6 +375,7 @@ var Datepickr = (function() {
       omitPast: false,
       omitFuture: false,
       omitWeekends: false,
+      greyWeekends: false,
       omitDays: [],
       activeDays: []
     };

@@ -1,4 +1,3 @@
-!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.Datepickr=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"/Users/tristen/dev/github/datepickr/index.js":[function(require,module,exports){
 ;(function(global) {
 
 Date.prototype.getPickrDate = function(opts)     { return (opts && opts.utc) ? this.getUTCDate() : this.getDate(); };
@@ -57,6 +56,33 @@ var Datepickr = (function() {
         var d = new Date(this.year, this.month, e.target.textContent).getTime();
         var c = e.target.classList;
         if (this.config.halfDay) {
+
+
+            if (c.contains('morning') && c.contains('active')) {
+                c.remove('morning');
+                c.add('noon');
+                this.config.activeDays = this.config.activeDays.map(function(date) {
+                    if (date[0] === d) date[1] = '0.1';
+                    return date;
+                });
+            } else if (c.contains('noon') && c.contains('active')) {
+                c.remove('noon');
+                this.config.activeDays = this.config.activeDays.filter(function(date) {
+                    if (date[0] === d) date[1] = '1.1';
+                    return date;
+                });
+            } else if (c.contains('active')) {
+                c.remove('active');
+                this.config.activeDays = this.config.activeDays.filter(function(date) {
+                    return date[0] !== d;
+                });
+            } else {
+                c.add('active', 'morning');
+                this.config.activeDays.push([d, '1.0']);
+            }
+
+
+/*
           if (c.contains('halfday')) {
             c.remove('halfday');
             this.config.activeDays = this.config.activeDays.map(function(date) {
@@ -72,9 +98,12 @@ var Datepickr = (function() {
             c.add('active', 'halfday');
             this.config.activeDays.push([d, 0.5]);
           }
+*/
+
+
         } else {
           if (c.contains('active')) {
-            c.remove('active', 'halfday');
+            c.remove('active', 'morning', 'noon');
             this.config.activeDays = this.config.activeDays.filter(function(date) {
               return date[0] !== d;
             });
@@ -227,12 +256,27 @@ var Datepickr = (function() {
       }
 
       if (isToday.call(this, year, month, i)) {
+          klass = 'today';
+
+          if (isWeekend.call(this, year, month, i)) {
+              if (this.config.greyWeekends) {
+                  klass += ' greyed';
+              }
+              if (this.config.omitWeekends) {
+                  klass += ' quiet';
+                  omit = true;
+              }
+          }
+
+/*
         if (this.config.omitWeekends && isWeekend.call(this, year, month, i)) {
           klass = 'today quiet';
           omit = true;
         } else {
           klass = 'today';
         }
+*/
+
       } else if (this.config.omitPast && isPast(year, month, i) ||
         this.config.omitFuture && isFuture(year, month, i) ||
         this.config.omitWeekends && isWeekend.call(this, year, month, i) ||
@@ -240,8 +284,18 @@ var Datepickr = (function() {
 
         klass = 'fill-light quiet';
         omit = true;
+
+              if (this.config.greyWeekends && isWeekend.call(this, year, month, i)) {
+                  klass += ' greyed';
+              }
+
+
       } else {
         klass = 'fill-light';
+
+              if (this.config.greyWeekends && isWeekend.call(this, year, month, i)) {
+                  klass += ' greyed';
+              }
       }
 
       var self = this;
@@ -249,7 +303,8 @@ var Datepickr = (function() {
       if (this.config.activeDays.length) {
         this.config.activeDays.forEach(function(d) {
           if (roundDate.call(self, new Date(d[0])).getTime() === new Date(year, month, i).getTime()) {
-            klass += (d[1] === 1) ? ' active' : ' halfday active';
+            klass += (d[1] === 1 || (d[1] == '1.1')) ? ' active' : ((d[1] == '1.0') ? ' active morning' : ' active noon' )
+            klass = klass;
           }
         });
       }
@@ -320,6 +375,7 @@ var Datepickr = (function() {
       omitPast: false,
       omitFuture: false,
       omitWeekends: false,
+      greyWeekends: false,
       omitDays: [],
       activeDays: []
     };
@@ -371,6 +427,3 @@ var Datepickr = (function() {
 global.Datepickr = Datepickr;
 if (typeof module !== 'undefined' && module.exports) module.exports = Datepickr;
 })(this);
-
-},{}]},{},["/Users/tristen/dev/github/datepickr/index.js"])("/Users/tristen/dev/github/datepickr/index.js")
-});
